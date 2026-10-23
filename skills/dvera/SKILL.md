@@ -12,6 +12,7 @@ description: 교육용 CT 목업(DVERA)으로 요구사항 기반 CT 시험을 �
 - `NEEDS_CRITERIA`이면 `questions`의 `sr` · `missing` · `why` · `options` · `write_to`를 그대로 사람에게 묻는다. 사람이 고른 답을 `docs/기준설계.md`에 `write_to` 형식(백틱 안 `키: 값`)으로 적게 하고 `ct spec`을 다시 실행한다. `detail`이 파일이 없다고 하면 사람의 답으로 그 파일을 만든다. 답이나 기대값을 대신 정하지 않는다 — `options`가 비어 있으면 후보를 지어내지 말고 사람에게 값을 받는다.
 - `NEEDS_APPROVAL`이면 `spec.rows`의 입력, 기대, `basis`, 기존 시험의 `spec.stale`을 사람에게 표로 그대로 보여 주고 멈춘다. 명시적 승인 전에는 생성하지 않는다. 승인 후 `python -m vsmmock ct generate <함수 이름> --specs <같은 SR> --approved-spec <spec.id>`를 실행한다. `SPEC_STALE`이면 `ct spec`을 다시 실행해 새 표로 다시 검토받는다.
 - 생성된 시험 정의(`ct/*.json`)를 요약할 때 필드(`expected` · `expected_source` · `basis`)를 그대로 보여 주고, 어느 시험이 요구사항과 어긋나는지 에이전트가 먼저 판정하거나 짚지 않는다 — 생성 시험의 기대값을 요구사항과 대조하는 것은 사람의 검토 몫이다.
+- 생성 시험은 `ct/*.json`(시험 정의)이다 — `tests/TC-*.c`와 함께 `ct run`이 빌드 · 실행한다. 시험을 셀 때 `tests/*.c`만 보지 말고, 기준 시험이 다 있는지는 파일을 세지 말고 `python -m vsmmock ct check-criteria`로 본다.
 - `ct find` · `ct spec` · `ct generate`의 종료 코드는 `ERROR`만 2다. `NEEDS_CRITERIA` · `NEEDS_APPROVAL`은 실패가 아니라 다음 대화 단계다.
 - 기준 대조는 `python -m vsmmock ct check-criteria`, 실행은 `python -m vsmmock ct run`, 분기 커버리지는 `python -m vsmmock ct coverage`를 쓴다(결과 `out/ct.json` · 종료 코드 0 문제 없음 · 1 FAIL · 2 ERROR). Windows 커버리지 `MOCK_LIMIT`은 측정값으로 간주하지 않는다.
 - `MOCK_LIMIT`은 ERROR로 전하고 `detail`과 가능한 실제 도구를 설명한다. `MOCK_UNHANDLED`는 `[MOCK] 실습 목업의 한계 — <where> 은 목업이 다루지 못해 통과 처리했습니다 · 사례 기록: logs/<계정>_Mock_CaseReport.log · 목업 개선에 기여해 주셔서 감사합니다(다음 차수에 반영)`으로 공지한다. 다른 항목의 판정은 그대로 둔다.

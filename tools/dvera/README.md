@@ -30,6 +30,8 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 | | `python -m vsmmock ct run` | 시험 실행 → `out/ct.json` · `out/ct-junit.xml` |
 | | `python -m vsmmock ct coverage` | 분기 측정값 / 목표 · 미충족 분기 → `out/ct.json` |
 
+**생성 시험은 `ct/*.json`** 입니다 — `tests/TC-*.c` 와 함께 `ct run` 이 실행합니다. 시험을 세는 도구(리뷰어 등)는 `tests/*.c` 만 보지 말고, 기준 시험이 다 있는지는 `python -m vsmmock ct check-criteria` 로 봅니다(`ct/*.json` 의 `req` 와 `tests/TC-*.c` 첫 줄 `@req` 를 함께 셉니다).
+
 종료 코드: 0 문제 없음 · 1 문제 찾음(FAIL) · 2 검사 실패(ERROR). `ct find · spec · generate` 는 결과 JSON 을 화면과 `out/ct-gen.json` 에 내고, `ERROR` 일 때만 2 입니다 — `NEEDS_CRITERIA` · `NEEDS_APPROVAL` 은 다음 대화 단계라 0.
 
 **목업이 묻는 경우** — 요구사항 문장이나 `docs/기준설계.md` 에 근거가 없는 기준 · 기대값은 만들지 않고 질문(`NEEDS_CRITERIA`)으로 돌려줍니다(`docs/기준설계.md` 가 아직 없어도 같습니다). 답은 질문의 `write_to` 위치(기준설계)에 직접 적고 다시 실행하세요 — `brake_on` 같은 bool 입력은 `true` / `false` 로 적습니다. CI 게이트 명령(`ct check-criteria` 등)은 같은 상황을 `ERROR · CRITERIA_MISSING` 으로 냅니다.

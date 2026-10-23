@@ -30,4 +30,4 @@ Skill 은 이 저장소의 `skills/dvera/` · `skills/statica/` · `skills/ads/`
 
 ## 출처
 
-`sun_Tool_Mockup` 커밋 `76c4184` 의 `vsmmock/` · `tools/` · `skills/` · `pyproject.toml` 을 그대로 옮겼다.
+`sun_Tool_Mockup` 커밋 `d2479ed` 의 `vsmmock/` · `tools/` · `skills/` · `pyproject.toml` 을 그대로 옮겼다.
