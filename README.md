@@ -15,7 +15,7 @@
 python -m pip install git+https://github.com/sunsook/sure-lab-tools
 ```
 
-Skill 은 이 저장소의 `skills/dvera/` · `skills/statica/` 를 대상 저장소 `.claude/skills/dvera/` · `.claude/skills/statica/` 로 복사한다. MCP 등록은 하지 않는다.
+Skill 은 이 저장소의 `skills/dvera/` · `skills/statica/` · `skills/ads/` 를 대상 저장소 `.claude/skills/` 아래 같은 이름으로 복사한다. `ads` 는 설명 전용이다(실습에서 실행하지 않는다). MCP 등록은 하지 않는다.
 
 확인(대상 저장소 루트에서): `python -m vsmmock ct run` 이 `[CT] run PASS …` 를 낸다. 새 Claude Code 세션에서 Skill 이 보인다.
 
@@ -24,10 +24,10 @@ Skill 은 이 저장소의 `skills/dvera/` · `skills/statica/` 를 대상 저�
 | 경로 | 무엇 |
 |---|---|
 | `vsmmock/` | 목업 엔진 · CLI(`python -m vsmmock …`) |
-| `skills/` | Claude Code Skill — `dvera`(CT 목업) · `statica`(STATIC 목업) · `ads`(설명용 · 실습에서 설치하지 않음) |
+| `skills/` | Claude Code Skill — `dvera`(CT 목업) · `statica`(STATIC 목업) · `ads`(설명 전용 — ADS 가 무엇인지 물으면 답한다 · 실습에서 실행하지 않음) |
 | `tools/` | 도구별 설명 · CLI 사용법 · 목업 한계(`tools/README.md` 부터) |
 | `pyproject.toml` | 설치 정의 |
 
 ## 출처
 
-`sun_Tool_Mockup` 커밋 `c629685` 의 `vsmmock/` · `tools/` · `skills/` · `pyproject.toml` 을 그대로 옮겼다.
+`sun_Tool_Mockup` 커밋 `76c4184` 의 `vsmmock/` · `tools/` · `skills/` · `pyproject.toml` 을 그대로 옮겼다.

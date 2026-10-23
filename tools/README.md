@@ -7,7 +7,7 @@
 |---|---|---|---|
 | CT 목업 (DVERA) | 요구사항 기반 · 구조 기반 시험 명세 → 승인 뒤 생성 · 실행 · 커버리지 — `python -m vsmmock ct find · spec · generate` | `python -m vsmmock ct …` → `out/ct.json` | `tools/dvera/README.md` |
 | STATIC 목업 (STATICA) | MISRA C:2023 정적분석 · 교정 제안 | `python -m vsmmock static analyze` → `out/static.json` | `tools/statica/README.md` |
-| ADS | 요구사항 문서 생성 · 추적성 확인 — 이번 실습에서는 설치하지 않습니다(도구 소개용) | `python -m vsmmock ads trace` → `out/ads.json` | `tools/ads/README.md` |
+| ADS | 요구사항 문서 생성 · 추적성 확인 — 이번 실습에서는 실행하지 않습니다(Skill 은 도구 설명 전용) | `python -m vsmmock ads trace` → `out/ads.json` | `tools/ads/README.md` |
 
 커버리지 에이전트 COVERA 는 공개 표면이 없어 목업을 만들지 않았습니다 — 분기 커버리지는 CT 목업이 맡습니다.
 
@@ -17,11 +17,11 @@
 python -m pip install git+https://github.com/sunsook/sure-lab-tools
 git clone --depth 1 https://github.com/sunsook/sure-lab-tools $env:TEMP\sure-lab-tools
 New-Item -ItemType Directory -Force .claude\skills | Out-Null
-Copy-Item -Recurse -Force $env:TEMP\sure-lab-tools\skills\dvera, $env:TEMP\sure-lab-tools\skills\statica .claude\skills\
+Copy-Item -Recurse -Force $env:TEMP\sure-lab-tools\skills\dvera, $env:TEMP\sure-lab-tools\skills\statica, $env:TEMP\sure-lab-tools\skills\ads .claude\skills\
 python -m vsmmock ct run
 ```
 
-첫 줄이 목업(CLI)을 설치하고, 둘째 ~ 넷째 줄이 CT 목업 · STATIC 목업 Skill 두 개를 `.claude/skills/` 에 넣습니다(MCP 등록은 필요 없습니다). 마지막 줄이 `[CT] run PASS …` 를 내면 준비 끝입니다(`tests/` 의 시험을 실제로 빌드 · 실행합니다). `ct check-criteria` · `static analyze` 는 실습 2-④ 에서 `docs/기준설계.md` 를 만든 뒤에 씁니다 — 그 전에는 「기준설계가 없다」는 ERROR 가 정상입니다. **gcc 는 설치하지 마세요** — 분기 커버리지는 CI(ubuntu)에서만 잽니다(CI 는 `pip install "vsmmock[ci] @ git+https://github.com/sunsook/sure-lab-tools"`).
+첫 줄이 목업(CLI)을 설치하고, 둘째 ~ 넷째 줄이 Skill 셋 — CT 목업 · STATIC 목업 · ADS(도구 설명 전용 · 실행하지 않음) — 을 `.claude/skills/` 에 넣습니다(MCP 등록은 필요 없습니다). 마지막 줄이 `[CT] run PASS …` 를 내면 준비 끝입니다(`tests/` 의 시험을 실제로 빌드 · 실행합니다). `ct check-criteria` · `static analyze` 는 실습 2-④ 에서 `docs/기준설계.md` 를 만든 뒤에 씁니다 — 그 전에는 「기준설계가 없다」는 ERROR 가 정상입니다. **gcc 는 설치하지 마세요** — 분기 커버리지는 CI(ubuntu)에서만 잽니다(CI 는 `pip install "vsmmock[ci] @ git+https://github.com/sunsook/sure-lab-tools"`).
 
 ## 목업이 지키는 약속
 

@@ -1,14 +1,14 @@
 ---
 name: ads
-description: 교육용 ADS 목업으로 요구사항과 시험 ID의 추적 관계를 확인하고 문서를 만든다.
+description: 자사 검증 도구 ADS 가 무엇을 하는 도구인지 설명한다(요구사항 문서 생성 · 추적성). 이번 실습에서는 ADS 를 실행하지 않는다.
 ---
 
-# ADS
+# ADS — 도구 설명 전용
 
-`repo`에는 저장소 루트를 준다. 모든 반환은 `source: "MOCK"`인 목업 결과다.
+이번 실습에서 ADS 는 **설명만** 한다. 사람이 ADS 를 물으면 아래 내용으로 설명하고, 목업 명령을 실행하지 않는다.
 
-- 요구사항과 시험의 연결, 고아 시험, 변경된 요구사항을 확인할 때 `ads_trace`를 호출한다. 생성된 SRS와 Test Spec이 필요할 때 `ads_generate_docs`를 호출하고 `created`를 보고한다.
-- 추적 누락(`@req` 없음)은 어느 시험 파일 몇 번째 줄인지 그대로 전하고, 어느 SR 에 연결할지는 사람이 정하게 한다. 에이전트가 `@req` 를 추측해 붙이지 않는다.
-- 시험 생성 요청은 이 스킬의 일이 아니다 — DVERA(`/dvera`)를 쓰라고 안내한다.
-- `MOCK_LIMIT`은 ERROR와 `detail`을 알린다. `MOCK_UNHANDLED`는 `[MOCK] 실습 목업의 한계 — <where> 은 목업이 다루지 못해 통과 처리했습니다 · 사례 기록: logs/<계정>_Mock_CaseReport.log · 목업 개선에 기여해 주셔서 감사합니다(다음 차수에 반영)`으로 공지한다.
-- 결론에는 반환된 `basis`나 SR·SRS·시험 ID 및 파일:줄 근거를 인용한다.
+- **무엇을 하는 도구인가** — 요구사항에서 SRS → SAD → SDD → 코드 → Test Spec → Test Case 를 단계별로 만들고(ALIRA AI), 단계 사이 식별자 사슬(`SR-001 → SRS_… → SAD_… → SWU_… → …_TC_…`)이 끊김 없이 이어졌는지 게이트로 확인한다(문서 생성 · 추적성).
+- **실제 제품과의 관계** — ADS 는 공개 저장소가 없어 교육자료 시연 자료(1차수 3일차 ADS 기능 소개 · `ads-시연-261008`)를 근거로 한다. 실습 도구 묶음의 ADS 목업은 그 흐름 중 SRS · Test Spec 조립과 ID 사슬 확인만 흉내 낸 것이다 — SAD · SDD · 코드 단계 문서는 없다. 자세한 표: https://github.com/sunsook/sure-lab-tools/blob/main/tools/ads/README.md
+- **실습에서는 부르지 않는다** — `ads_generate_docs` · `ads_trace` · `python -m vsmmock ads trace` 를 실행하지 않는다. 사람이 실행을 원하면 이번 실습 범위 밖이라고 알리고 위 README 를 안내한다.
+- **시험 생성은 CT 목업** — 시험을 만들거나 요구사항 기반 시험을 설계하는 요청은 CT 목업(`/dvera`)으로, 정적분석은 STATIC 목업(`/statica`)으로 안내한다.
+- 이 스킬에 적힌 것과 위 README 에 있는 것만 설명한다. 근거에 없는 기능 · 수치는 말하지 않는다.
