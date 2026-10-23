@@ -1,24 +1,25 @@
-[project]
-name = "vsmmock"
-version = "0.1.0"
-description = "교육용 검증 도구 목업 — DVERA · STATICA/STATIC · ADS"
-requires-python = ">=3.10"
-dependencies = ["pycparser>=2.21", "ziglang>=0.13"]
-
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "vsmmock"
+version = "0.1.0"
+description = "Education mock of verification tools - CT (DVERA), STATIC (STATICA), ADS"
+requires-python = ">=3.10"
+dependencies = ["pycparser>=2.21", "ziglang>=0.13"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0,<2"]  # 2.x 는 mcp.server.fastmcp 를 없앴다 — faces/mcp_*.py 는 v1 API
+ci = ["gcovr>=7.0"]
+dev = ["pytest>=8", "pytest-xdist>=3", "setuptools>=61"]
+
+# pip install git+…/sure-lab-tools — 패키지는 vsmmock 만 · C 헤더(fake_libc)를 함께 싣는다(없으면 cparse 가 헤더를 못 찾음)
 [tool.setuptools.packages.find]
 include = ["vsmmock*"]
 
 [tool.setuptools.package-data]
 "vsmmock.engine" = ["fake_libc/*.h"]
-
-[project.optional-dependencies]
-mcp = ["mcp>=1.0"]
-ci = ["gcovr>=7.0"]
-dev = ["pytest>=8", "pytest-xdist>=3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

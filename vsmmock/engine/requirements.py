@@ -67,7 +67,7 @@ def boundaries(sentence: str) -> list[tuple[int, str]]:
 
 
 def _git(repo: Path, *args: str) -> str | None:
-    run = subprocess.run(["git", *args], cwd=repo, capture_output=True,
+    run = subprocess.run(["git", *args], cwd=repo, capture_output=True, stdin=subprocess.DEVNULL,
                          text=True, encoding="utf-8")
     return run.stdout if run.returncode == 0 else None
 

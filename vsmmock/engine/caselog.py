@@ -4,16 +4,20 @@ import json
 import os
 import subprocess
 import sys
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
 from vsmmock import __version__
 
+# 엔진을 부른 입구 — MCP 서버면 기본값 mcp · CLI 는 main 에서 cli 로 바꾼다
+FACE: ContextVar[str] = ContextVar("vsmmock_face", default="mcp")
+
 
 def _run(repo: Path, *command: str) -> str | None:
     try:
-        completed = subprocess.run(command, cwd=repo, capture_output=True,
+        completed = subprocess.run(command, cwd=repo, capture_output=True, stdin=subprocess.DEVNULL,
                                    text=True, encoding="utf-8", timeout=5)
     except (OSError, subprocess.TimeoutExpired):
         return None

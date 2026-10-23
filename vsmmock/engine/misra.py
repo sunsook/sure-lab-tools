@@ -41,7 +41,7 @@ def _parse(repo: Path, source: Path) -> c_ast.FileAST:
                "-I", str(FAKE_LIBC), "-I", str(repo / "include"), str(source)]
     with tempfile.TemporaryDirectory(prefix="vsmmock_cpp_") as cache:
         env = {**os.environ, "ZIG_LOCAL_CACHE_DIR": cache}  # 전역 캐시는 기본 위치(runner.py 주석 참고)
-        result = subprocess.run(command, cwd=repo, capture_output=True, text=True,
+        result = subprocess.run(command, cwd=repo, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                 encoding="utf-8", env=env)
     if result.returncode:
         raise ValueError(result.stderr.strip() or f"전처리 실패: {source}")

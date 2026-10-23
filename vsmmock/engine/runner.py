@@ -125,13 +125,13 @@ def run(repo: Path, *, junit_path: Path | None = None) -> Result:
         try:
             # 전역 캐시(libc · compiler-rt)는 사용자 기본 위치를 그대로 쓴다 — 임시 폴더로 돌리면 매 실행 libc 를 다시 빌드한다(실측 39초 → 1초)
             env = {**os.environ, "ZIG_LOCAL_CACHE_DIR": temporary}
-            compiled = subprocess.run(command, cwd=repo, capture_output=True, text=True,
+            compiled = subprocess.run(command, cwd=repo, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                       encoding="utf-8", timeout=120, env=env)
             if compiled.returncode:
                 result.status, result.reason = "ERROR", "BUILD_FAILED"
                 result.detail = compiled.stderr[:1000]
                 return result
-            executed = subprocess.run([str(binary)], cwd=repo, capture_output=True, text=True,
+            executed = subprocess.run([str(binary)], cwd=repo, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                       encoding="utf-8", timeout=30)
         except (OSError, subprocess.TimeoutExpired) as error:
             result.status, result.reason, result.detail = "ERROR", "BUILD_FAILED", str(error)

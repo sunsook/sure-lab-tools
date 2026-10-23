@@ -11,7 +11,7 @@ from pathlib import Path
 from pycparser import c_ast, c_generator, c_parser
 from pycparser.c_parser import ParseError
 
-from .caselog import record
+from .caselog import FACE, record
 from .result import unhandled_message
 
 FAKE_LIBC = Path(__file__).with_name("fake_libc")
@@ -22,7 +22,7 @@ def _parse_source(repo: Path, source: Path):
                "-I", str(FAKE_LIBC), "-I", str(repo / "include"), str(source)]
     with tempfile.TemporaryDirectory(prefix="vsmmock_cpp_") as cache:
         env = {**os.environ, "ZIG_LOCAL_CACHE_DIR": cache}  # 전역 캐시는 기본 위치(runner.py 주석 참고)
-        preprocessed = subprocess.run(command, cwd=repo, capture_output=True, text=True,
+        preprocessed = subprocess.run(command, cwd=repo, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                      encoding="utf-8", env=env)
     if preprocessed.returncode:
         raise ValueError(f"{source}: {preprocessed.stderr[:500]}")
@@ -36,7 +36,7 @@ def _safe_parse(repo: Path, source: Path, notices: list[dict] | None, command: s
         where = source.relative_to(repo).as_posix() + ":1"
         if notices is not None and any(item.get("where") == where for item in notices):
             return None
-        case_id = record(repo, tool="DVERA", face="mcp", command=command,
+        case_id = record(repo, tool="DVERA", face=FACE.get(), command=command,
                          kind="MOCK_UNHANDLED", where=where, detail=str(error), exception=error)
         if notices is not None:
             notices.append({"kind": "MOCK_UNHANDLED", "where": where, "case_id": case_id,

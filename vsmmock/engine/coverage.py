@@ -80,17 +80,17 @@ def measure(repo: Path, *, face: str = "cli") -> Result:
             command = ["gcc", "--coverage", "-std=c11", "-I", str(repo / "include"),
                        *sources, *(str(work / "tests" / path.name) for path in c_tests),
                        str(runner), "-o", str(binary)]
-            compiled = subprocess.run(command, cwd=work, capture_output=True, text=True,
+            compiled = subprocess.run(command, cwd=work, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                       encoding="utf-8", timeout=120)
             if compiled.returncode:
                 raise RuntimeError(f"gcc: {compiled.stderr[:1000]}")
-            executed = subprocess.run([str(binary)], cwd=work, capture_output=True,
+            executed = subprocess.run([str(binary)], cwd=work, capture_output=True, stdin=subprocess.DEVNULL,
                                       text=True, encoding="utf-8", timeout=30)
             if executed.returncode:
                 raise RuntimeError(f"runner: {executed.stderr[:1000]}")
             report = work / "coverage.json"
             collected = subprocess.run(["gcovr", "--root", str(work), "--json", "-o", str(report)],
-                                       cwd=work, capture_output=True, text=True,
+                                       cwd=work, capture_output=True, stdin=subprocess.DEVNULL, text=True,
                                        encoding="utf-8", timeout=120)
             if collected.returncode:
                 raise RuntimeError(f"gcovr: {collected.stderr[:1000]}")

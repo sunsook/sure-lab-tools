@@ -1,6 +1,6 @@
-# DVERA (CT) — 교육용 목업
+# CT 목업 (DVERA) — 교육용 목업
 
-> 이 폴더의 DVERA 는 **교육용 목업**입니다. 결과 머리에 항상 `"source": "MOCK"` 이 붙고, 결과는 여러분 저장소의 C 코드를 실제로 빌드 · 실행해서 계산합니다. 공통 약속(지어내지 않음 · 한계 공지)은 [`tools/README.md`](../README.md).
+> 이 폴더의 CT 목업(DVERA)은 **교육용 목업**입니다. 결과 머리에 항상 `"source": "MOCK"` 이 붙고, 결과는 여러분 저장소의 C 코드를 실제로 빌드 · 실행해서 계산합니다. 공통 약속(지어내지 않음 · 한계 공지)은 [`tools/README.md`](../README.md).
 
 ## 실제 제품 — CT 와 DVERA 가 하는 일
 
@@ -22,18 +22,17 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 
 | 얼굴 | 도구 · 명령 | 하는 일 |
 |---|---|---|
-| 에이전틱(PR · 개발 단계) | `ct_find_functions` | `src/*.c` 함수 · 시그니처 · signatureHash · 파일:줄 |
-| | `ct_ai_generate_test` | `specs=["SR-xxx"]` → 요구사항 · 기준설계로 스펙 표(입력 · 기대 · 근거 줄) → **승인 뒤에만** `ct/*.json` 시험 정의 생성 · 요구사항이 바뀌어 낡은 시험은 승인 때 `ct/retired/` 로 옮김(지우지 않음). `specs` 없음 → 분기(파일:줄 · 참/거짓)와 입력 제안 |
-| | `ct_execute_test` · `ct_get_test_results` | `ct/*.json` + `tests/TC-*.c` 를 실제로 빌드 · 실행 · status 는 CT 와 같은 값(Success · Failure · Error …) |
-| | `ct_get_coverage` | 분기 커버리지(아래 한계 참고) · 기준설계의 「배포 게이트에서 잡는다」 결정을 돌려줌 |
-| | `dvera_check_environment` | 컴파일러 · 커버리지 도구 확인 |
+| 에이전틱(PR · 개발 단계 · Skill 이 부름) | `python -m vsmmock ct find [이름 일부]` | `src/*.c` 함수 · 시그니처 · signatureHash · 파일:줄 |
+| | `python -m vsmmock ct spec <함수> --specs SR-xxx …` | 요구사항 · 기준설계로 스펙 표(입력 · 기대 · 근거 줄 · `spec.id`) — 근거가 없으면 질문(`NEEDS_CRITERIA`) · 파일을 쓰지 않음. `--specs` 없음 → 분기(파일:줄 · 참/거짓)와 입력 제안 |
+| | `python -m vsmmock ct generate <함수> --specs … --approved-spec <spec.id>` | **승인 뒤에만** `ct/*.json` 시험 정의 생성 · 요구사항이 바뀌어 낡은 시험은 `ct/retired/` 로 옮김(지우지 않음) · 표가 바뀌었으면 `ERROR · SPEC_STALE` |
+| | MCP 를 등록한 경우 같은 함수: `ct_find_functions` · `ct_ai_generate_test` · `ct_execute_test` · `ct_get_test_results` · `ct_get_coverage` · `dvera_check_environment` | 결과는 CLI 와 같음 |
 | CLI(CI/CD · 배포 단계) | `python -m vsmmock ct check-criteria` | `docs/기준설계.md` 기준 시험이 다 있는지 · 요구사항과 기준이 맞는지(시험 통과는 안 봄) — PR 가드와 게이트가 같이 씀 |
 | | `python -m vsmmock ct run` | 시험 실행 → `out/ct.json` · `out/ct-junit.xml` |
 | | `python -m vsmmock ct coverage` | 분기 측정값 / 목표 · 미충족 분기 → `out/ct.json` |
 
-종료 코드: 0 문제 없음 · 1 문제 찾음(FAIL) · 2 검사 실패(ERROR).
+종료 코드: 0 문제 없음 · 1 문제 찾음(FAIL) · 2 검사 실패(ERROR). `ct find · spec · generate` 는 결과 JSON 을 화면과 `out/ct-gen.json` 에 내고, `ERROR` 일 때만 2 입니다 — `NEEDS_CRITERIA` · `NEEDS_APPROVAL` 은 다음 대화 단계라 0.
 
-**목업이 묻는 경우** — 요구사항 문장이나 `docs/기준설계.md` 에 근거가 없는 기준 · 기대값은 만들지 않고 질문(`NEEDS_CRITERIA`)으로 돌려줍니다. 답은 질문의 `write_to` 위치(기준설계)에 직접 적고 다시 실행하세요. CLI 는 같은 상황을 `ERROR · CRITERIA_MISSING` 으로 냅니다.
+**목업이 묻는 경우** — 요구사항 문장이나 `docs/기준설계.md` 에 근거가 없는 기준 · 기대값은 만들지 않고 질문(`NEEDS_CRITERIA`)으로 돌려줍니다(`docs/기준설계.md` 가 아직 없어도 같습니다). 답은 질문의 `write_to` 위치(기준설계)에 직접 적고 다시 실행하세요 — `brake_on` 같은 bool 입력은 `true` / `false` 로 적습니다. CI 게이트 명령(`ct check-criteria` 등)은 같은 상황을 `ERROR · CRITERIA_MISSING` 으로 냅니다.
 
 ## 목업 한계
 
@@ -48,15 +47,9 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 
 ## 설치 · 등록
 
-실습 저장소 루트에서:
+[`tools/README.md` 「준비」](../README.md) 대로 목업(CLI)을 설치하고 Skill(`dvera` · `statica`)을 `.claude/skills/` 에 넣습니다. MCP 등록은 필요 없습니다. 마지막 줄 `python -m vsmmock ct run` 이 `[CT] run PASS …` 를 내면 준비 끝입니다. `ct check-criteria` 는 실습 2-④ 에서 `docs/기준설계.md` 를 만든 뒤에 씁니다.
 
-```powershell
-python -m pip install pycparser ziglang mcp
-claude mcp add dvera -- python -m vsmmock.faces.mcp_dvera
-python -m vsmmock ct run
-```
-
-마지막 줄이 `[CT] run PASS …` 를 내면 준비 끝입니다. `ct check-criteria` 는 실습 2-② 에서 `docs/기준설계.md` 를 만든 뒤에 씁니다.
+MCP 로도 쓰려면(선택): `python -m pip install "vsmmock[mcp] @ git+https://github.com/sunsook/sure-lab-tools"` 뒤 `claude mcp add dvera -- python -m vsmmock.faces.mcp_dvera`.
 
 ---
 실습 중 `[MOCK] 실습 목업의 한계 …` 공지를 봤다면 → [목업 사례 로그 올리기](../README.md#목업-사례-로그-올리기-3일차-실습-종료-전)

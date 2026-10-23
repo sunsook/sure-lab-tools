@@ -34,9 +34,27 @@ def _satisfies(condition: str, value: int) -> bool:
     return False
 
 
+BOOL_TYPES = ("_Bool", "bool")
+INTEGER_TYPES = ("int", "int8_t", "int16_t", "int32_t", "uint8_t", "uint16_t", "uint32_t")
+
+
+def _form(ctype: str) -> str:
+    return "true|false" if ctype in BOOL_TYPES else "정수" if ctype in INTEGER_TYPES else "값"
+
+
+def _literal(raw: str, ctype: str):
+    """기준설계에 적힌 값을 매개변수 형으로 읽는다 — 읽지 못하면 None(승인 전에 다시 묻는다)."""
+    if ctype in BOOL_TYPES:
+        return {"true": True, "false": False}.get(raw)
+    if ctype in INTEGER_TYPES:
+        return int(raw) if re.fullmatch(r"-?\d+", raw) else None
+    return raw
+
+
 def fixed_inputs(repo: Path, function: str, parameters: list[str], sr: str,
-                 boundary_input: str) -> dict:
-    fixed = read_criteria(repo).fixed_inputs or ""
+                 boundary_input: str, types: dict[str, str] | None = None) -> dict:
+    fixed = read_criteria(repo, missing_ok=True).fixed_inputs or ""
+    types = types or {}
     result = {}
     match = re.fullmatch(r"(\w+)\(([^()]*)\)", fixed)
     if match and match[1] == function:
@@ -44,18 +62,26 @@ def fixed_inputs(repo: Path, function: str, parameters: list[str], sr: str,
             if "=" not in part:
                 continue
             key, raw = (piece.strip() for piece in part.split("=", 1))
-            if key in parameters:
-                result[key] = {"true": True, "false": False}.get(raw, raw)
+            if key not in parameters:
+                continue
+            ctype = types.get(key, "")
+            value = _literal(raw, ctype)
+            if value is None:
+                raise NeedsCriteria(sr, f"{key} 고정 입력 값 {raw!r} 을 읽을 수 없습니다",
+                                    f"{key} 은 {ctype} 입력입니다 — {_form(ctype)} 로 적어야 합니다(받은 값: {raw}).", [],
+                                    f"docs/기준설계.md · fixed_inputs: {function}({key}=<{_form(ctype)}>)")
+            result[key] = value
     for parameter in parameters:
         if parameter != boundary_input and parameter not in result:
             raise NeedsCriteria(sr, f"{parameter} 고정 입력", "요구사항에 입력값의 기준이 없습니다.", [],
-                                f"docs/기준설계.md · fixed_inputs: {function}({parameter}=<값>)")
+                                f"docs/기준설계.md · fixed_inputs: {function}({parameter}=<{_form(types.get(parameter, ''))}>)")
     return result
 
 
 def requirement_rows(repo: Path, sr: str, function: str, parameters: list[str],
-                     boundary_input: str, enum_members: list[str]) -> list[dict]:
-    criteria = read_criteria(repo)
+                     boundary_input: str, enum_members: list[str],
+                     types: dict[str, str] | None = None) -> list[dict]:
+    criteria = read_criteria(repo, missing_ok=True)
     requirements = read_requirements(repo, criteria.requirements or "docs/요구사항.md")
     requirement = requirements.get(sr)
     if requirement is None:
@@ -75,7 +101,7 @@ def requirement_rows(repo: Path, sr: str, function: str, parameters: list[str],
     if not numbers.intersection(values):
         raise NeedsCriteria(sr, "요구사항과 기준설계 경계 불일치", "required_tests가 현재 요구사항 경계를 포함하지 않습니다.",
                             options, "docs/기준설계.md · required_tests")
-    fixed = fixed_inputs(repo, function, parameters, sr, boundary_input)
+    fixed = fixed_inputs(repo, function, parameters, sr, boundary_input, types)
     rows = []
     for value in values:
         expected, basis = expected_value(repo, sr, value, enum_members)
@@ -86,7 +112,7 @@ def requirement_rows(repo: Path, sr: str, function: str, parameters: list[str],
 
 def expected_value(repo: Path, sr: str, value: int,
                    enum_members: list[str] | None = None) -> tuple[str, str]:
-    criteria = read_criteria(repo)
+    criteria = read_criteria(repo, missing_ok=True)
     requirements = read_requirements(repo, criteria.requirements or "docs/요구사항.md")
     grades = read_grades(repo, criteria.requirements or "docs/요구사항.md")
     grade = next((grade for grade in grades.values() if _satisfies(grade.condition, value)), None)

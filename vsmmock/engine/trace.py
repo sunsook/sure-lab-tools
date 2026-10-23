@@ -40,7 +40,7 @@ def _changed_tests(repo: Path) -> list[str]:
     if branch is None:
         return []
     run = subprocess.run(["git", "ls-tree", "-r", "--name-only", branch, "--", "ct", "tests"],
-                         cwd=repo, capture_output=True, text=True, encoding="utf-8")
+                         cwd=repo, capture_output=True, stdin=subprocess.DEVNULL, text=True, encoding="utf-8")
     if run.returncode != 0:
         raise ValueError(run.stderr.strip())
     old_paths = set(run.stdout.splitlines())
@@ -52,7 +52,7 @@ def _changed_tests(repo: Path) -> list[str]:
                 relative.startswith("tests/TC-") and relative.endswith(".c")):
             continue
         old = subprocess.run(["git", "show", f"{branch}:{relative}"], cwd=repo,
-                             capture_output=True, text=True, encoding="utf-8")
+                             capture_output=True, stdin=subprocess.DEVNULL, text=True, encoding="utf-8")
         old_text = old.stdout if old.returncode == 0 else None
         path = repo / relative
         new_text = path.read_text(encoding="utf-8") if path.exists() else None
@@ -74,7 +74,7 @@ def _changed_requirements(repo: Path, requirements: dict) -> list[str]:
     if branch is None:
         return []
     run = subprocess.run(["git", "show", f"{branch}:docs/요구사항.md"], cwd=repo,
-                         capture_output=True, text=True, encoding="utf-8")
+                         capture_output=True, stdin=subprocess.DEVNULL, text=True, encoding="utf-8")
     if run.returncode != 0:
         return []
     before = parse_requirements(run.stdout)

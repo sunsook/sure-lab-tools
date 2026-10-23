@@ -44,10 +44,13 @@ def parse_criteria(text: str) -> Criteria:
     return criteria
 
 
-def read_criteria(repo: Path) -> Criteria:
+def read_criteria(repo: Path, missing_ok: bool = False) -> Criteria:
+    """missing_ok — 에이전틱 생성 경로만: 파일이 없으면 빈 기준으로 읽어 질문(NEEDS_CRITERIA)으로 돌린다."""
     path = repo / "docs/기준설계.md"
     if not path.is_file():
-        raise FileNotFoundError("docs/기준설계.md 가 없습니다 — 실습 2-② 에서 만듭니다")
+        if missing_ok:
+            return Criteria()
+        raise FileNotFoundError("docs/기준설계.md 가 없습니다 — 실습 2-④ 에서 만듭니다")
     return parse_criteria(path.read_text(encoding="utf-8"))
 
 

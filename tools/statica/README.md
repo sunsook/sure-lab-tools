@@ -1,4 +1,4 @@
-# STATICA / STATIC — 교육용 목업
+# STATIC 목업 (STATICA / STATIC) — 교육용 목업
 
 > 이 폴더의 정적분석기는 **교육용 목업**입니다. PR · 개발 단계 에이전틱 판 이름은 **STATICA**, CI/CD · 배포 단계 CLI 판 이름은 **STATIC** 입니다. 결과 머리에 항상 `"source": "MOCK"` 이 붙습니다. 공통 약속은 [`tools/README.md`](../README.md).
 
@@ -16,8 +16,8 @@
 
 | 얼굴 | 도구 · 명령 | 하는 일 |
 |---|---|---|
-| 에이전틱(STATICA) | `statica_pre_analyze` | 아래 6 규칙 위배 위치(파일:줄) · `fix_hint` · 규칙별 · 심각도별 집계 — 소스 무변경 |
-| | `statica_ruleset_show` | 기준설계에서 고른 규칙 · 목업이 지원하는 규칙 |
+| 에이전틱(STATICA · Skill 이 부름) | `python -m vsmmock static analyze` | 아래 6 규칙 위배 위치(파일:줄) · `rule` · `fix_hint` · 규칙별 집계 — 소스 무변경 |
+| | MCP 를 등록한 경우: `statica_pre_analyze` · `statica_ruleset_show` | 같은 결과 · 심각도별 집계 · 기준설계에서 고른 규칙 · 목업이 지원하는 규칙 |
 | CLI(STATIC) | `python -m vsmmock static analyze` | → `out/static.json` · 위배 수가 기준설계 `misra_max` 를 넘으면 FAIL |
 
 목업 규칙 6개 — 1차수 실측에 있고 Required 등급이며 구문 구조로 판정할 수 있는 것: **16.3**(case 끝 break) · **16.4**(switch default) · **10.1**(bool 을 산술에 사용) · **14.3**(항상 참인 unsigned 비교) · **21.7**(`atoi` 류) · **21.6**(표준 입출력 함수). 쓸 규칙은 `docs/기준설계.md` 의 `misra_rules` 줄로 정합니다.
@@ -33,15 +33,11 @@
 
 ## 설치 · 등록
 
-실습 저장소 루트에서:
+[`tools/README.md` 「준비」](../README.md) 대로 목업(CLI)을 설치하고 Skill(`statica`)을 `.claude/skills/` 에 넣습니다. MCP 등록은 필요 없습니다 — Skill 이 `python -m vsmmock static analyze` 를 부릅니다.
 
-```powershell
-python -m pip install pycparser ziglang mcp
-claude mcp add statica -- python -m vsmmock.faces.mcp_statica
-python -m vsmmock static analyze
-```
+MCP 로도 쓰려면(선택): `python -m pip install "vsmmock[mcp] @ git+https://github.com/sunsook/sure-lab-tools"` 뒤 `claude mcp add statica -- python -m vsmmock.faces.mcp_statica`.
 
-`static analyze` 는 `docs/기준설계.md` 의 `misra_rules` · `misra_max` 줄을 읽습니다 — 실습 2-② 에서 기준설계를 만들기 전에는 `CRITERIA_MISSING` ERROR 가 정상입니다(목업은 검사할 규칙 · 통과선을 대신 정하지 않습니다).
+`static analyze` 는 `docs/기준설계.md` 의 `misra_rules` · `misra_max` 줄을 읽습니다 — 실습 2-④ 에서 기준설계를 만들기 전에는 `CRITERIA_MISSING` ERROR 가 정상입니다(목업은 검사할 규칙 · 통과선을 대신 정하지 않습니다).
 
 ---
 실습 중 `[MOCK] 실습 목업의 한계 …` 공지를 봤다면 → [목업 사례 로그 올리기](../README.md#목업-사례-로그-올리기-3일차-실습-종료-전)

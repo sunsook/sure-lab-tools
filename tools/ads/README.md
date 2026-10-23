@@ -30,7 +30,7 @@ ADS 는 공개 저장소가 없어 교육자료 시연 자료를 근거로 합�
 
 ## 설치 · 등록
 
-실습 저장소 루트에서:
+이번 실습에서는 ADS 를 설치하지 않습니다(도구 소개용). 아래는 따로 써 볼 때의 명령입니다 — 실습 저장소 루트에서:
 
 ```powershell
 python -m pip install pycparser ziglang mcp

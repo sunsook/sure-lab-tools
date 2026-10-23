@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 from . import cparse
-from .caselog import record
+from .caselog import FACE, record
 from .result import unhandled_message
 from .criteria import read_criteria
 from .oracle import NeedsCriteria, expected_value, requirement_rows
@@ -57,7 +57,7 @@ def specification(repo: Path, function: str, specs: list[str],
         return {"source": "MOCK", "status": "ERROR", "reason": "INPUT_BROKEN", "detail": "함수를 찾지 못했습니다."}
     shape = cparse.function_shapes(repo, signatures[function]["sourceFile"], notices=notices)[function]
     names = [parameter["name"] for parameter in shape["parameters"]]
-    fixed = read_criteria(repo).fixed_inputs or ""
+    fixed = read_criteria(repo, missing_ok=True).fixed_inputs or ""
     fixed_match = re.fullmatch(r"(\w+)\(([^()]*)\)", fixed)
     fixed_names = ({part.split("=", 1)[0].strip() for part in fixed_match[2].split(",") if "=" in part}
                    if fixed_match and fixed_match[1] == function else set())
@@ -67,7 +67,7 @@ def specification(repo: Path, function: str, specs: list[str],
     if len(integers) != 1 or not shape["enum_members"] or any(
             p["type"] in ("...", "") for p in shape["parameters"]):
         detail = "목업이 이 함수의 요구사항 기반 시험을 만들 수 없습니다."
-        case_id = record(repo, tool="DVERA", face="mcp", command="ct_ai_generate_test",
+        case_id = record(repo, tool="DVERA", face=FACE.get(), command="ct_ai_generate_test",
                          kind="MOCK_UNHANDLED", where=shape["where"], detail=detail)
         return {"source": "MOCK", "status": "MOCK_UNHANDLED", "created": [],
                 "notices": [{"kind": "MOCK_UNHANDLED", "where": shape["where"],
@@ -78,12 +78,17 @@ def specification(repo: Path, function: str, specs: list[str],
     rows, questions = [], []
     for sr in specs:
         try:
-            rows.extend(requirement_rows(repo, sr, function, names, integers[0], shape["enum_members"]))
+            rows.extend(requirement_rows(repo, sr, function, names, integers[0], shape["enum_members"],
+                                         {p["name"]: p["type"] for p in shape["parameters"]}))
         except NeedsCriteria as question:
             questions.append(question.as_dict())
     stale = _stale(repo, specs, notices=notices)
     if questions:
-        return {"source": "MOCK", "status": "NEEDS_CRITERIA", "questions": questions, "stale": stale}
+        answer = {"source": "MOCK", "status": "NEEDS_CRITERIA", "questions": questions, "stale": stale}
+        if not (repo / "docs/기준설계.md").is_file():
+            answer["detail"] = ("docs/기준설계.md 가 없습니다 — 질문의 write_to 대로 이 파일을 만들어 답을 적은 뒤 "
+                                "다시 실행하세요(실습 2-④).")
+        return answer
     payload = json.dumps(rows, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
     return {"source": "MOCK", "status": "NEEDS_APPROVAL",
@@ -128,6 +133,7 @@ def approve(repo: Path, spec: dict, specs: list[str]) -> dict:
             continue
         definition = {"id": id_, **row, "approved_spec": spec["id"], "generated_by": "engine"}
         path = repo / "ct" / f"{id_}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)  # 수강생 1번 저장소에는 ct/ 가 없다
         path.write_text(json.dumps(definition, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         created.append(path.relative_to(repo).as_posix())
     if first_creation and created:
