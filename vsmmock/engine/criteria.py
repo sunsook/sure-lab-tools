@@ -8,6 +8,12 @@ from .requirements import boundaries, read_requirements
 from .result import Finding, Result
 from .tests_index import read_tests
 
+ACTIONS = ("block", "fix", "report")
+CHOICES = {  # 정책 키의 허용 값 — ADR-015 · ADR-016
+    "misra_mandatory": ACTIONS, "misra_required": ACTIONS, "misra_advisory": ACTIONS,
+    "misra_deviation": ("allow", "deny"), "coverage_exception": ("allow", "deny"),
+}
+
 
 @dataclass
 class Criteria:
@@ -16,9 +22,14 @@ class Criteria:
     fixed_inputs: str | None = None
     misra_rules: list[str] = field(default_factory=list)
     misra_max: int | None = None
+    misra_mandatory: str | None = None
+    misra_required: str | None = None
+    misra_advisory: str | None = None
+    misra_deviation: str | None = None
     branch_target: int | None = None
     branch_scope: str | None = None
     coverage: str | None = None
+    coverage_exception: str | None = None
     expected: dict[str, str] = field(default_factory=dict)
 
 
@@ -39,6 +50,10 @@ def parse_criteria(text: str) -> Criteria:
                 criteria.misra_rules = [part.strip() for part in value.split(",")]
             elif key in ("misra_max", "branch_target"):
                 setattr(criteria, key, int(value))
+            elif key in CHOICES:
+                if value not in CHOICES[key]:
+                    raise ValueError(f"잘못된 {key}: {value} — {' · '.join(CHOICES[key])} 중 하나로 적으세요")
+                setattr(criteria, key, value)
             elif hasattr(criteria, key):
                 setattr(criteria, key, value)
     return criteria

@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
+from vsmmock.engine.caselog import FACE
 from vsmmock.engine.cparse import functions
-from vsmmock.engine.coverage import UNMEASURED, available, deferral, measure
+from vsmmock.engine.coverage import UNMEASURED, available, review
+from vsmmock.engine.coverage import pre_check as coverage_pre_check
 from vsmmock.engine.generate import approve, specification, structure_specification
 from vsmmock.engine.runner import run
 
@@ -62,10 +64,13 @@ def check_environment(repo: Path) -> dict:
             "ok": bool(ziglang.__file__)}
 
 
+def pre_check(repo: Path) -> dict:
+    return coverage_pre_check(Path(repo), face=FACE.get())  # 빠진 커버리지 기준만 묻는다 — ADR-016
+
+
 def get_coverage(repo: Path) -> dict:
     repo = Path(repo)
-    result = measure(repo, face="mcp")
-    deferred = deferral(repo)
+    result = review(repo, face="mcp")  # 미루기 정책 · 변경 없음 판정은 엔진 — ADR-016 · ADR-017
     metrics = result.metrics
     answer = {"source": "MOCK", "status": result.status, "statement": UNMEASURED,
               "findings": [item.__dict__ for item in result.findings],
@@ -80,10 +85,6 @@ def get_coverage(repo: Path) -> dict:
         answer["reason"] = result.reason
     if result.detail:
         answer["detail"] = result.detail
-    if deferred:
-        answer["deferred"] = deferred
-        if result.status == "FAIL":
-            answer["status"] = "PASS"
-            answer["notices"] = [*result.notices, {"kind": "COVERAGE_DEFERRED",
-                "message": "분기 목표 미달을 배포 게이트로 미뤘습니다.", **deferred}]
+    if "deferred" in metrics:
+        answer["deferred"] = metrics["deferred"]
     return answer

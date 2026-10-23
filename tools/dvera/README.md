@@ -25,7 +25,8 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 | 에이전틱(PR · 개발 단계 · Skill 이 부름) | `python -m vsmmock ct find [이름 일부]` | `src/*.c` 함수 · 시그니처 · signatureHash · 파일:줄 |
 | | `python -m vsmmock ct spec <함수> --specs SR-xxx …` | 요구사항 · 기준설계로 스펙 표(입력 · 기대 · 근거 줄 · `spec.id`) — 근거가 없으면 질문(`NEEDS_CRITERIA`) · 파일을 쓰지 않음. `--specs` 없음 → 분기(파일:줄 · 참/거짓)와 입력 제안 |
 | | `python -m vsmmock ct generate <함수> --specs … --approved-spec <spec.id>` | **승인 뒤에만** `ct/*.json` 시험 정의 생성 · 요구사항이 바뀌어 낡은 시험은 `ct/retired/` 로 옮김(지우지 않음) · 표가 바뀌었으면 `ERROR · SPEC_STALE` |
-| | MCP 를 등록한 경우 같은 함수: `ct_find_functions` · `ct_ai_generate_test` · `ct_execute_test` · `ct_get_test_results` · `ct_get_coverage` · `dvera_check_environment` | 결과는 CLI 와 같음 |
+| | `python -m vsmmock ct pre-check` | 커버리지 기준 사전 점검 — 분기 목표(`branch_target`) · 대상 소스(`branch_scope`) · 커버리지 미달 예외 정책(`coverage_exception`) 중 빠진 칸만 질문(`NEEDS_CRITERIA` · 근거 = 소스별 판정 지점 수) · 다 차면 PASS · 결과 `out/ct-pre.json` |
+| | MCP 를 등록한 경우 같은 함수: `ct_find_functions` · `ct_ai_generate_test` · `ct_execute_test` · `ct_get_test_results` · `ct_get_coverage` · `dvera_check_environment` | 결과는 CLI 와 같음(`ct pre-check` 는 실제 DVERA 에 해당 도구가 없어 CLI 만) |
 | CLI(CI/CD · 배포 단계) | `python -m vsmmock ct check-criteria` | `docs/기준설계.md` 기준 시험이 다 있는지 · 요구사항과 기준이 맞는지(시험 통과는 안 봄) — PR 가드와 게이트가 같이 씀 |
 | | `python -m vsmmock ct run` | 시험 실행 → `out/ct.json` · `out/ct-junit.xml` |
 | | `python -m vsmmock ct coverage` | 분기 측정값 / 목표 · 미충족 분기 → `out/ct.json` |
@@ -36,13 +37,18 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 
 **목업이 묻는 경우** — 요구사항 문장이나 `docs/기준설계.md` 에 근거가 없는 기준 · 기대값은 만들지 않고 질문(`NEEDS_CRITERIA`)으로 돌려줍니다(`docs/기준설계.md` 가 아직 없어도 같습니다). 답은 질문의 `write_to` 위치(기준설계)에 직접 적고 다시 실행하세요 — `brake_on` 같은 bool 입력은 `true` / `false` 로 적습니다. CI 게이트 명령(`ct check-criteria` 등)은 같은 상황을 `ERROR · CRITERIA_MISSING` 으로 냅니다.
 
+**커버리지 미달 예외** — 분기 목표 미달을 「배포 게이트에서 잡는다」로 미룬 기록(`coverage: deferred-to-deploy · 결정자=… · 사유=…`)은 기준설계에 `coverage_exception: allow` 가 있을 때만 PR · 개발 단계(`ct_get_coverage`)에서 인정합니다. `deny` 이거나 칸이 없으면 기록을 쓰지 않고 그렇다고 알립니다(`CRITERIA_NOTE`). 배포 게이트 `ct coverage` 는 두 줄과 상관없이 목표로 판정합니다.
+
+**로컬 커버리지 결과 읽는 법** — gcc 가 없는 실습 PC 에서 `ct coverage` 는 둘 중 하나입니다. ① 커버리지 입력(`src/*.c` 중 main.c 를 뺀 것 · `include/` · `tests/TC-*.c` · `ct/*.json` · 기준설계 커버리지 줄)이 main 과 같으면 PASS + `COVERAGE_UNCHANGED`(이 변경이 커버리지를 바꿀 수 없어 막지 않음 · 측정은 CI). ② 바뀌었으면 `MOCK_LIMIT`(ERROR) — 「이 자리에서 못 잰 것」이지 실패가 아닙니다. 리뷰에는 「미검증 — CI 에서 잰다」로 적습니다. main 을 찾지 못하면 비교할 수 없어 ②로 냅니다.
+
 ## 목업 한계
 
 | 요청 | 목업 응답 |
 |---|---|
 | 정수 · bool · enum 이 아닌 입력(포인터 · 배열 · 문자열 · 구조체) · 호출 순서가 필요한 함수의 요구사항 기반 생성 | 「목업이 다루지 못한 패턴」 공지(`MOCK_UNHANDLED`) · 생성 0건 → `tests/TC-*.c` 로 직접 작성 |
 | CT 실제 테스트 파일 · 스텁 · self-healing · 회귀 델타 · 리포트 | 제공하지 않음 |
-| 로컬(Windows) 분기 커버리지 | `MOCK_LIMIT` · ERROR — 실습 PC 컴파일러(zig)에 gcov 런타임이 없어 측정할 수 없다. **gcc 를 설치하지 마세요** — 커버리지는 CI 에서 잰다 |
+| 로컬(Windows) 분기 커버리지 | `MOCK_LIMIT` · ERROR — 실습 PC 컴파일러(zig)에 gcov 런타임이 없어 측정할 수 없다(커버리지 입력이 main 과 같으면 PASS + 「변경 없음」). **gcc 를 설치하지 마세요** — 커버리지는 CI 에서 잰다 |
+| `ct pre-check` 의 판정 지점 수 | 목업이 AST 로 센 근거(if · for · ?: · case) — gcov 의 분기 정의와 다를 수 있다 |
 | CI 분기 커버리지 | ubuntu 의 gcc `--coverage` + 오픈소스 [gcovr](https://gcovr.com). gcov 의 분기 정의는 CT 와 다를 수 있다 |
 | Statement · MC/DC | `N/A(목업 미측정)` |
 | 요구사항의 비교 방향만 바뀜(「이상」→「초과」 · 수치 그대로) | `ct check-criteria` 는 기준 입력(경계 수치)이 그대로라 통과시킨다 — 대신 `ads trace` 가 바뀐 요구사항을 알리고, 게이트는 요구사항 파일 변경으로 REVIEW(사람 결정)가 된다. 시험 기대값이 새 요구사항과 맞는지는 사람이 검토한다 |
@@ -52,6 +58,8 @@ dvera-plugin README 의 문장 — 「요구사항 기반 시험과 구조 커�
 [`tools/README.md` 「준비」](../README.md) 대로 목업(CLI)을 설치하고 Skill(`dvera` · `statica`)을 `.claude/skills/` 에 넣습니다. MCP 등록은 필요 없습니다. 마지막 줄 `python -m vsmmock ct run` 이 `[CT] run PASS …` 를 내면 준비 끝입니다. `ct check-criteria` 는 실습 2-④ 에서 `docs/기준설계.md` 를 만든 뒤에 씁니다.
 
 MCP 로도 쓰려면(선택): `python -m pip install "vsmmock[mcp] @ git+https://github.com/sunsook/sure-lab-tools"` 뒤 `claude mcp add dvera -- python -m vsmmock.faces.mcp_dvera`.
+
+다른 폴더(PR head 를 꺼낸 worktree 등)를 검사하려면 모든 명령에 `--repo <경로>` 를 붙입니다 — 결과 파일 · 사례 로그는 그 폴더에 생깁니다.
 
 ---
 실습 중 `[MOCK] 실습 목업의 한계 …` 공지를 봤다면 → [목업 사례 로그 올리기](../README.md#목업-사례-로그-올리기-3일차-실습-종료-전)

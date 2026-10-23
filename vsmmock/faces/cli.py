@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from vsmmock.agentic import dvera
+from vsmmock.agentic import dvera, statica
 from vsmmock.engine.caselog import FACE
 from vsmmock.engine.criteria import check_criteria
 from vsmmock.engine.coverage import measure
@@ -15,7 +15,8 @@ from vsmmock.engine.runner import run
 from vsmmock.engine.trace import trace
 
 
-CONVERSATION = ("find", "spec", "generate")  # 생성 대화 명령 — 게이트 아님(ADR-013)
+CONVERSATION = {("ct", "find"), ("ct", "spec"), ("ct", "generate"), ("ct", "pre-check"),
+                ("static", "pre-analyze")}  # 생성 대화 명령 — 게이트 아님(ADR-013 · ADR-014 · ADR-016)
 
 
 def _signature(repo: Path, function: str) -> tuple[str | None, dict | None]:
@@ -31,9 +32,13 @@ def _signature(repo: Path, function: str) -> tuple[str | None, dict | None]:
 
 
 def _conversation(repo: Path, args: argparse.Namespace) -> int:
-    """agentic.dvera 결과 dict 를 그대로 stdout(JSON) · --out 에 낸다. ERROR 만 종료 2."""
+    """agentic(dvera · statica) 결과 dict 를 그대로 stdout(JSON) · --out 에 낸다. ERROR 만 종료 2."""
     try:
-        if args.action == "find":
+        if args.tool == "static":
+            answer = statica.pre_analyze(repo)
+        elif args.action == "pre-check":
+            answer = dvera.pre_check(repo)
+        elif args.action == "find":
             answer = dvera.find_functions(repo, args.query)
         else:
             signature, answer = _signature(repo, args.function)
@@ -83,17 +88,26 @@ def _main(argv: list[str] | None = None) -> int:
     run_command.add_argument("--out", default="out/ct.json")
     coverage_command = actions.add_parser("coverage")
     coverage_command.add_argument("--out", default="out/ct.json")
+    pre_check = actions.add_parser("pre-check", help="커버리지 기준 사전 점검 — 빠진 칸만 질문(파일 안 씀)")
+    pre_check.add_argument("--out", default="out/ct-pre.json")
     static = tools.add_parser("static")
     static_actions = static.add_subparsers(dest="action", required=True)
     static_analyze = static_actions.add_parser("analyze")
     static_analyze.add_argument("--out", default="out/static.json")
+    static_pre = static_actions.add_parser("pre-analyze", help="결함 위치 · fix_hint — 기준 줄이 없으면 질문")
+    static_pre.add_argument("--out", default="out/static-pre.json")
     ads = tools.add_parser("ads")
     ads_actions = ads.add_subparsers(dest="action", required=True)
     ads_trace = ads_actions.add_parser("trace")
     ads_trace.add_argument("--out", default="out/ads.json")
+    for subparsers in (actions, static_actions, ads_actions):
+        for command in subparsers.choices.values():
+            command.add_argument("--repo", help="검사할 저장소 경로(없으면 현재 폴더) — PR head worktree 등")
     args = parser.parse_args(argv)
-    repo = Path.cwd()
-    if args.tool == "ct" and args.action in CONVERSATION:
+    repo = Path(args.repo).resolve() if args.repo else Path.cwd()
+    if not repo.is_dir():
+        parser.error(f"--repo 경로가 폴더가 아닙니다: {args.repo}")
+    if (args.tool, args.action) in CONVERSATION:
         return _conversation(repo, args)
     try:
         if args.tool == "ads":
@@ -120,7 +134,11 @@ def _main(argv: list[str] | None = None) -> int:
         # 검사 자체 실패 — 「결함 0건」처럼 통과로 읽히는 집계 줄을 찍지 않는다
         print(f"[{tag}] {args.action} ERROR · {result.reason} — {result.detail or ''}".rstrip(" —"))
     elif args.tool == "static":
-        print(f"[STATIC] {result.metrics.get('analyzed', 0)}개 대상 분석 완료 · 결함 {len(result.findings)}건")
+        line = (f"[STATIC] {result.metrics.get('analyzed', 0)}개 대상 분석 완료 · "
+                f"결함 {result.metrics.get('defects', len(result.findings))}건")
+        if result.metrics.get("mode") == "category":  # 분류 모드 — findings = Merge 막는 위배(ADR-015)
+            line += f" · Merge 막는 위배 {len(result.findings)}건"
+        print(line)
     elif args.tool == "ads":
         print(f"[ADS] 요구사항 {result.metrics.get('requirements', 0)} · 연결 {result.metrics.get('linked', 0)} · 누락 {result.metrics.get('missing', 0)}")
     else:

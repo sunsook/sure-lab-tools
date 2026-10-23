@@ -118,6 +118,30 @@ def find_functions(repo: Path, *, include_main: bool = False) -> list[dict[str, 
     return functions(repo, include_main=include_main)
 
 
+DECISIONS = (c_ast.If, c_ast.For, c_ast.TernaryOp, c_ast.Case)  # branches 의 Visitor 와 같은 판정 지점
+
+
+def decision_sites(repo: Path, notices: list[dict] | None = None) -> dict[str, int]:
+    """main.c 를 뺀 src/*.c 마다 함수 본문의 판정 지점 수 — ct pre-check 근거(gcov 분기 정의와 다를 수 있음)."""
+    def walk(node):
+        yield node
+        for _, child in node.children():
+            yield from walk(child)
+
+    counts = {}
+    for source in sorted((repo / "src").glob("*.c")):
+        if source.name == "main.c":
+            continue
+        tree = _safe_parse(repo, source, notices, "ct pre-check")
+        if tree is None:
+            continue
+        bodies = [node.body for node in tree.ext if isinstance(node, c_ast.FuncDef)
+                  and Path(node.decl.coord.file.replace("\\", "/")).name == source.name]
+        counts[source.relative_to(repo).as_posix()] = sum(isinstance(item, DECISIONS)
+                                                          for body in bodies for item in walk(body))
+    return counts
+
+
 def branches(repo: Path, function: str, notices: list[dict] | None = None) -> list[dict]:
     """Return AST decision sites with both sides, using original source coordinates."""
     result = []
